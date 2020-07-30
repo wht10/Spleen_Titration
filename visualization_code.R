@@ -88,7 +88,6 @@ dat %>% filter(Organ == "BM") %>%
 
 
 # making a table
-install.packages("kableExtra")
 library(kableExtra)
 
 tab_dat <- dat %>% select(Organ, Flour, Titration_.1.XXX., avg_SI, tot_avg_SI)
@@ -128,7 +127,7 @@ top_picks_tab <- tab_dat %>% group_by(Organ, Flour) %>%
   summarize(top_pick = Titration_.1.XXX.[which(weight == "+++")]) %>% 
   pivot_wider(names_from = Organ, values_from = top_pick)
 
-top_picks_tab %>% 
+new_top_picks_tab %>% 
   kable() %>% 
   kable_styling()
 head(top_picks_tab)
