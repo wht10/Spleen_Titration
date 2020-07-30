@@ -30,7 +30,7 @@ dat %>% filter(Organ == "Spleen") %>%
   xlab("Titration") +
   # scale_x_reverse() +
   scale_x_continuous(breaks = c(1/100, 1/200, 1/400, 1/800, 1/1600), 
-                     labels = c("1:100", "1:200", "1:600", "1:800", "1:1600"), 
+                     labels = c("1:100", "1:200", "1:400", "1:800", "1:1600"), 
                      trans = "reverse") +
   ylab("Stain Index") +
   theme(legend.position = "none", 
@@ -91,7 +91,7 @@ dat %>% filter(Organ == "BM") %>%
 install.packages("kableExtra")
 library(kableExtra)
 
-tab_dat <- dat %>% select(Organ, Flour, Titration_.1.XXX., avg_SI)
+tab_dat <- dat %>% select(Organ, Flour, Titration_.1.XXX., avg_SI, tot_avg_SI)
 head(tab_dat)
 
 #formatting titrations
@@ -103,9 +103,25 @@ tab_dat <- distinct(tab_dat)
 tab_dat <- tab_dat %>% group_by(Organ, Flour) %>% 
   mutate(weight = ifelse(avg_SI == sort(avg_SI, decreasing = T)[1], "+++", 
                          ifelse(avg_SI == sort(avg_SI, decreasing = T)[2], "++", 
-                                ifelse(avg_SI == sort(avg_SI, decreasing = T)[3], "+", "-")))) %>% 
+                                ifelse(avg_SI == sort(avg_SI, decreasing = T)[3], "+", "-"))), 
+         deviation = avg_SI/tot_avg_SI) %>% 
   ungroup()
 head(tab_dat)
+# added the sum_dev column
+tab_dat <- tab_dat %>% group_by(Flour, Titration_.1.XXX.) %>% mutate(sum_dev = sum(deviation))
+
+#new table with added weights
+new_tab_dat <- tab_dat %>% group_by(Organ, Flour) %>% 
+  mutate(new_weight = ifelse(sum_dev == sort(sum_dev, decreasing = T)[1], "+++", 
+                         ifelse(sum_dev == sort(sum_dev, decreasing = T)[2], "++", 
+                                ifelse(sum_dev == sort(sum_dev, decreasing = T)[3], "+", "-")))) %>% 
+  ungroup()
+
+#new top picks
+new_top_picks_tab <- new_tab_dat %>% group_by(Organ, Flour) %>% 
+  summarize(top_pick = Titration_.1.XXX.[which(new_weight == "+++")], 
+            sum_foldChange_better = sum_dev[which(new_weight == "+++")]) %>% 
+  pivot_wider(names_from = Organ, values_from = top_pick)
 
 #Making a tidy table of top_picks
 top_picks_tab <- tab_dat %>% group_by(Organ, Flour) %>% 
