@@ -54,6 +54,7 @@ dat %>% filter(Organ == "Spleen") %>%
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
 
+#BM alone graph
 dat %>% filter(Organ == "BM") %>% 
   group_by(Flour) %>% 
   ggplot(aes(x = Titration_value, y = Stain_Index)) + 
@@ -67,6 +68,39 @@ dat %>% filter(Organ == "BM") %>%
                      trans = "reverse") +
   ylab("Stain Index") +
   theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 90), 
+        axis.title = element_text(size = 14)) +
+  facet_wrap(.~Flour, 
+             scales = "free", 
+             ncol = 4, 
+             labeller = labeller(Flour = c(AF700 = "Alexa Fluor 700", 
+                                           APC = "APC", 
+                                           APCcy7 = "APC-Cyanine7", 
+                                           BB700 = "BB700", 
+                                           BV421 = "Brilliant Violet 421", 
+                                           BV605 = "Brilliant Violet 605", 
+                                           BV711 = "Brilliant Violet 711", 
+                                           BV786 = "Brilliant Violet 786", 
+                                           PE = "PE", 
+                                           PeD594 = "PE-Dazzle 594", 
+                                           PEcy5 = "PE-Cyanine 5", 
+                                           PEcy7 = "PE-Cyanine 7", 
+                                           SB645 = "Super Bright 645", 
+                                           LD_ZA = "Zombie Aqua FVD")) )
+#Together
+dat %>% #didnt filter by organ this time
+  group_by(Flour) %>% 
+  ggplot(aes(x = Titration_value, y = Stain_Index)) + 
+  geom_point(aes(color = Organ), size = 1) + #also made the points colored by organ
+  geom_line(aes(x = Titration_value, y = avg_SI, color = Organ)) + #added color by organ instead
+  geom_hline(aes(yintercept = tot_avg_SI), linetype = "dashed") +
+  xlab("Titration") +
+  # scale_x_reverse() +
+  scale_x_continuous(breaks = c(1/100, 1/200, 1/400, 1/800, 1/1600), 
+                     labels = c("1:100", "1:200", "1:400", "1:800", "1:1600"), 
+                     trans = "reverse") +
+  ylab("Stain Index") +
+  theme(legend.position = "right", 
         axis.text.x = element_text(angle = 90), 
         axis.title = element_text(size = 14)) +
   facet_wrap(.~Flour, 
