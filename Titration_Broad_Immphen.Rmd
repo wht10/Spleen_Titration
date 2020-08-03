@@ -1,26 +1,81 @@
-library(tidyverse)
-dat <- read.csv("BM_Spleen_Stain_Index_Table.csv")
-str(dat)
+---
+title: "Bone Marrow and Spleen Stain Index Visualizations"
+author: "Billy Tomaszewski"
+date: "`r Sys.Date()`"
+output:
+ pdf_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+    keep_tex: true
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+urlcolor: blue
+---
 
-#adding column with numeric value of each titration, avg_SI, and se_SI
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE,message=FALSE,warning=FALSE, cache=TRUE, cache.lazy=FALSE)
+```
+
+```{r tinytex-options, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+```{r installing-loading-libraries}
+#loading required packages
+
+if(!require(tidyverse)) install.packages("tidyverse") 
+if(!require(ggplot2)) install.packages("ggplot2") 
+if(!require(dplyr)) install.packages("dplyr") 
+if(!require(kableExtra)) install.packages("kableExtra")
+
+library(dplyr)
+library(tidyverse)
+library(kableExtra)
+library(ggplot2)
+library(lubridate)
+```
+
+# Overview
+
+Titrations were performed on 3 biological samples from both Bone Marrow and Spleen. Bone Marrow was selected because of its relatvie enrichment for myeloid cells, and Spleen was used for its enrichment of lymphoid cells. Serial 2 fold dilutions were performed from 1:100-1:1600 (1:100,200,400,800,1600). This was perfomed to find the optimal titration for a 15 color panel that is being optimized. 14 colors x 3 samples x 5 dilutions resulted in 210 samples per organ. These samples were acquired on a BD LSRII, using a HTS so they could be acquired directly from a 96 well plate. In order to determine which titration was optimal, the FlowJo [StainIndex plugin (v1.6)](https://www.flowjo.com/exchange/#/plugin/profile?id=41) was used to automatically calculate stain index for each sample. Stain index is a metric which describes the quality of the signal produced, with higher Stain Indexs making it easier to resolve differences in cell types by flow cytometry. The equation used to for stain index is below: 
+$$SI=\frac{MFI_{pos}-MFI_{neg}}{SD_{neg}}$$
+Where SI = Stain Index, MFI = Median Flourescent Intensity of a population, and SD = Standard Deviation, with $pos$ and $neg$ denoting whether the statistic was extracted from the positive or negative population in the sample. 
+
+# Data Visualization
+
+Below are the graphs of Titration vs. Stain Index for each organ, and then with them overlayed. 
+
+```{r Making_Graph}
+#read in csv from repo
+dat <- read.csv("BM_Spleen_Stain_Index_Table.csv")
+
+#adding column with numeric value of each titration, avg_SI for each titration, and  standard error  as se_SI
 dat <- dat %>% mutate(Titration_value = 1/Titration_.1.XXX., Organ = as.factor(Organ)) %>% 
   group_by(Organ, Flour, Titration_value) %>% 
   mutate(avg_SI = mean(Stain_Index), 
          se_SI = sd(Stain_Index)/sqrt(3)) %>% 
   ungroup()
 
-#adding mean_SI (for hline in graphs)
+#calculating average SI for each flour to be used in a hline for each graph 
 dat <- dat %>% 
   group_by(Organ, Flour) %>% 
   mutate(tot_avg_SI = mean(Stain_Index))
 
-# mean SI per titration per fluor
-dat %>% summarise(mean = mean(Stain_Index))
-
-# number of fluors (14)
-length(unique(dat$Flour))  
-
-# Spleen graphs
+# Spleen alone graphs
 dat %>% filter(Organ == "Spleen") %>% 
   group_by(Flour) %>% 
   ggplot(aes(x = Titration_value, y = Stain_Index)) + 
@@ -54,7 +109,7 @@ dat %>% filter(Organ == "Spleen") %>%
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
 
-#BM alone graph
+#BM alone graphs
 dat %>% filter(Organ == "BM") %>% 
   group_by(Flour) %>% 
   ggplot(aes(x = Titration_value, y = Stain_Index)) + 
@@ -87,13 +142,13 @@ dat %>% filter(Organ == "BM") %>%
                                            PEcy7 = "PE-Cyanine 7", 
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
-#Together
+#Both organs same graph
 dat %>% #didnt filter by organ this time
   group_by(Flour) %>% 
   ggplot(aes(x = Titration_value, y = Stain_Index)) + 
   geom_point(aes(color = Organ), size = 1) + #also made the points colored by organ
   geom_line(aes(x = Titration_value, y = avg_SI, color = Organ)) + #added color by organ instead
-  geom_hline(aes(yintercept = tot_avg_SI), linetype = "dashed") +
+  geom_hline(aes(yintercept = tot_avg_SI, color = Organ), linetype = "dashed") +
   xlab("Titration") +
   # scale_x_reverse() +
   scale_x_continuous(breaks = c(1/100, 1/200, 1/400, 1/800, 1/1600), 
@@ -119,17 +174,15 @@ dat %>% #didnt filter by organ this time
                                            PEcy7 = "PE-Cyanine 7", 
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
+```
+Using this data we also wanted to make a table to display which titrations were the best for each organ, and how much above average they were. To decide which titration was best overall, we took each titration and divided it by the average SI for that flourophore for that organ. This gives a metric that calculates the fold change improvement for a given titration in a given organ. This value is called $Fold Change$ in the below tables. 
 
-
-# making a table
-library(kableExtra)
-
+```{r SI tables for SPleen and BM}
 tab_dat <- dat %>% select(Organ, Flour, Titration_.1.XXX., avg_SI, tot_avg_SI)
-head(tab_dat)
 
 #formatting titrations
 tab_dat$Titration_.1.XXX. <- paste0("1:", dat$Titration_.1.XXX.)
-head(tab_dat)
+
 
 #only unique rows
 tab_dat <- distinct(tab_dat)
@@ -139,72 +192,23 @@ tab_dat <- tab_dat %>% group_by(Organ, Flour) %>%
                                 ifelse(avg_SI == sort(avg_SI, decreasing = T)[3], "+", "-"))), 
          FoldChange = avg_SI/tot_avg_SI) %>% 
   ungroup()
-head(tab_dat)
 
-#making table for spleen 
-install.packages("magick")
-install.packages("webshot")
-webshot::install_phantomjs()
 
 tab_dat %>% select(Organ,Flour,Titration_.1.XXX.,avg_SI,weight,FoldChange) %>% filter(Organ == "Spleen") %>% 
-  kable(.,"html",col.names = c("Organ", "Fluorochrome", "Titration", "Average Stain Index", "Weight","Fold Change"),
+  kable(.,"latex",longtable = T,col.names = c("Organ", "Fluorochrome", "Titration", "Average Stain Index", "Weight","Fold Change"),
         align = "c", 
         digits = 2) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
                                       full_width = F,
                                       font_size = 14,
-                                      fixed_thead = F) %>% save_kable("Spleen_Titration.pdf")
+                                      fixed_thead = F)
 #making table for BM  
 tab_dat %>% select(Organ,Flour,Titration_.1.XXX.,avg_SI,weight,FoldChange) %>% filter(Organ == "BM") %>% 
-  kable(.,"html",col.names = c("Organ", "Fluorochrome", "Titration", "Average Stain Index", "Weight","Fold Change"),
+  kable(.,"latex",longtable = T, col.names = c("Organ", "Fluorochrome", "Titration", "Average Stain Index", "Weight","Fold Change"),
         align = "c", 
         digits = 2) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
                                       full_width = F,
                                       font_size = 14,
-                                      fixed_thead = F) %>% save_kable("BM_Titration.pdf")
-  
-# added the sum_FoldChange column
-tab_dat <- tab_dat %>% group_by(Flour, Titration_.1.XXX.) %>% mutate(sum_FoldChange = sum(FoldChange))
+                                      fixed_thead = F)
+```
 
-#new table with added weights
-new_tab_dat <- tab_dat %>% group_by(Organ, Flour) %>% 
-  mutate(new_weight = ifelse(sum_FoldChange == sort(sum_FoldChange, decreasing = T)[1], "+++", 
-                         ifelse(sum_FoldChange == sort(sum_FoldChange, decreasing = T)[2], "++", 
-                                ifelse(sum_FoldChange == sort(sum_FoldChange, decreasing = T)[3], "+", "-")))) %>% 
-  ungroup()
-
-#new top picks
-new_top_picks_tab <- new_tab_dat %>% group_by(Organ, Flour) %>% 
-  summarize(top_pick = Titration_.1.XXX.[which(new_weight == "+++")], 
-            sum_foldChange_better = sum_FoldChange[which(new_weight == "+++")]) %>% 
-  pivot_wider(names_from = Organ, values_from = top_pick)
-
-new_top_picks_tab %>% 
-  kable() %>% 
-  kable_styling()
-
-
-#Making table pretty
-kable(tab_dat, format = "html")
-tab_dat %>% 
-  kable(col.names = c("Organ", "Fluorochrome", "Titration", "AVG Stain Index", "Weight"),
-        align = "c", 
-        digits = 2) %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-                full_width = F,
-                font_size = 14,
-                fixed_thead = F) %>% 
-  row_spec(row = which(tab_dat$weight == "+++"), 
-           bold = T, 
-           italic = F, 
-           underline = T) %>% 
-  row_spec(row = which(tab_dat$Titration_.1.XXX. == "1:100" & tab_dat$Organ == "Spleen"), 
-           bold = F, 
-           color = "white", 
-           background = "#FF6666" ) %>% 
-  row_spec(row = which(tab_dat$Titration_.1.XXX. == "1:100" & tab_dat$Organ == "BM"), 
-           bold = F, 
-           color = "white", 
-           background = "#3399FF" )
- 
-
-
+From the above tables we can conclude which titrations work the best across organs. 
