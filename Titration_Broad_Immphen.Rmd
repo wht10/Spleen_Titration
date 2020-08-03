@@ -27,7 +27,7 @@ urlcolor: blue
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE,message=FALSE,warning=FALSE, cache=TRUE, cache.lazy=FALSE)
+knitr::opts_chunk$set(echo=FALSE,message=FALSE,warning=FALSE)
 ```
 
 ```{r tinytex-options, include=FALSE}
@@ -59,7 +59,8 @@ Where SI = Stain Index, MFI = Median Flourescent Intensity of a population, and 
 
 Below are the graphs of Titration vs. Stain Index for each organ, and then with them overlayed. 
 
-```{r Making_Graph}
+```{r Spleen Graph, fig.align='center', fig.height= 10, fig.width= 10}
+
 #read in csv from repo
 dat <- read.csv("BM_Spleen_Stain_Index_Table.csv")
 
@@ -108,7 +109,9 @@ dat %>% filter(Organ == "Spleen") %>%
                                            PEcy7 = "PE-Cyanine 7", 
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
+```
 
+```{r BM Graph, fig.align='center', fig.height= 10, fig.width= 10}
 #BM alone graphs
 dat %>% filter(Organ == "BM") %>% 
   group_by(Flour) %>% 
@@ -142,6 +145,9 @@ dat %>% filter(Organ == "BM") %>%
                                            PEcy7 = "PE-Cyanine 7", 
                                            SB645 = "Super Bright 645", 
                                            LD_ZA = "Zombie Aqua FVD")) )
+```
+
+```{r Both Graph, fig.align='center', fig.height= 10, fig.width= 10}
 #Both organs same graph
 dat %>% #didnt filter by organ this time
   group_by(Flour) %>% 
