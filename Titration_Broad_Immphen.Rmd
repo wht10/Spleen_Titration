@@ -52,7 +52,7 @@ library(lubridate)
 # Overview
 
 Titrations were performed on 3 biological samples from both Bone Marrow and Spleen. Bone Marrow was selected because of its relatvie enrichment for myeloid cells, and Spleen was used for its enrichment of lymphoid cells. Serial 2 fold dilutions were performed from 1:100-1:1600 (1:100,200,400,800,1600). This was perfomed to find the optimal titration for a 15 color panel that is being optimized. 14 colors x 3 samples x 5 dilutions resulted in 210 samples per organ. These samples were acquired on a BD LSRII, using a HTS so they could be acquired directly from a 96 well plate. In order to determine which titration was optimal, the FlowJo [StainIndex plugin (v1.6)](https://www.flowjo.com/exchange/#/plugin/profile?id=41) was used to automatically calculate stain index for each sample. Stain index is a metric which describes the quality of the signal produced, with higher Stain Indexs making it easier to resolve differences in cell types by flow cytometry. The equation used to for stain index is below: 
-$$SI=\frac{MFI_{pos}-MFI_{neg}}{SD_{neg}}$$
+$$SI=\frac{MFI_{pos}-MFI_{neg}}{2 \times SD_{neg}}$$
 Where SI = Stain Index, MFI = Median Flourescent Intensity of a population, and SD = Standard Deviation, with $pos$ and $neg$ denoting whether the statistic was extracted from the positive or negative population in the sample. 
 
 # Data Visualization
